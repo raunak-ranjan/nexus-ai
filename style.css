@@ -188,3 +188,64 @@ button { cursor: pointer; }
   .chat { padding-left: 12px; padding-right: 12px; }
   #modelSelect { max-width: 190px; }
 }
+
+
+/* v2.2 conversation management */
+.history-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+}
+.history-row.active { background: #171a23; }
+.history-row .history-item { flex: 1; min-width: 0; }
+.history-menu-btn {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: #747a89;
+  border-radius: 7px;
+  opacity: 0;
+  font-size: 17px;
+}
+.history-row:hover .history-menu-btn,
+.history-row.active .history-menu-btn { opacity: 1; }
+.history-menu-btn:hover { background: #222632; color: white; }
+
+.chat-context-menu {
+  position: fixed;
+  z-index: 30;
+  width: 145px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  background: #151821;
+  border-radius: 9px;
+  box-shadow: 0 16px 45px rgba(0,0,0,.4);
+}
+.chat-context-menu button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #d7dae1;
+  text-align: left;
+  padding: 8px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.chat-context-menu button:hover { background: #20232d; color: white; }
+.chat-context-menu button.danger { color: #ff8f8f; }
+.chat-context-menu button.danger:hover { background: #2a1b20; }
+
+.danger-outline {
+  color: #ff9b9b;
+  border-color: #4a2a30;
+}
+.danger-outline:hover { background: #2a1b20; }
+
+@media (max-width: 760px) {
+  .history-menu-btn { opacity: 1; }
+}

@@ -38,13 +38,115 @@ function saveCurrent() {
 function renderHistory() {
   historyList.innerHTML = "";
   [...state.chats].reverse().forEach(chat => {
+    const row = document.createElement("div");
+    row.className = `history-row${chat.id === state.current.id ? " active" : ""}`;
+
     const button = document.createElement("button");
     button.className = "history-item";
     button.textContent = chat.title || "Untitled chat";
     button.title = chat.title || "Untitled chat";
     button.onclick = () => loadChat(chat.id);
-    historyList.appendChild(button);
+
+    const menu = document.createElement("button");
+    menu.className = "history-menu-btn";
+    menu.textContent = "⋯";
+    menu.title = "Chat options";
+    menu.setAttribute("aria-label", "Chat options");
+    menu.onclick = e => {
+      e.stopPropagation();
+      showChatMenu(menu, chat.id);
+    };
+
+    row.append(button, menu);
+    historyList.appendChild(row);
   });
+}
+
+function showChatMenu(anchor, chatId) {
+  document.querySelectorAll(".chat-context-menu").forEach(el => el.remove());
+
+  const menu = document.createElement("div");
+  menu.className = "chat-context-menu";
+
+  const rename = document.createElement("button");
+  rename.textContent = "✎ Rename";
+  rename.onclick = () => {
+    menu.remove();
+    renameChat(chatId);
+  };
+
+  const remove = document.createElement("button");
+  remove.className = "danger";
+  remove.textContent = "⌫ Delete";
+  remove.onclick = () => {
+    menu.remove();
+    deleteChat(chatId);
+  };
+
+  menu.append(rename, remove);
+  document.body.appendChild(menu);
+
+  const rect = anchor.getBoundingClientRect();
+  menu.style.left = `${Math.min(rect.right + 4, window.innerWidth - 150)}px`;
+  menu.style.top = `${Math.min(rect.top, window.innerHeight - 90)}px`;
+
+  setTimeout(() => {
+    document.addEventListener("click", () => menu.remove(), { once: true });
+  }, 0);
+}
+
+function renameChat(id) {
+  const chat = state.chats.find(c => c.id === id);
+  if (!chat) return;
+
+  const nextTitle = prompt("Rename conversation:", chat.title || "Untitled chat");
+  if (nextTitle === null) return;
+
+  const title = nextTitle.trim().slice(0, 80);
+  if (!title) {
+    toast("Chat name cannot be empty.");
+    return;
+  }
+
+  chat.title = title;
+  if (state.current.id === id) state.current.title = title;
+  saveChats();
+  renderHistory();
+  toast("Conversation renamed.");
+}
+
+function deleteChat(id) {
+  const chat = state.chats.find(c => c.id === id);
+  if (!chat) return;
+
+  if (!confirm(`Delete "${chat.title || "this conversation"}"?`)) return;
+
+  state.chats = state.chats.filter(c => c.id !== id);
+  saveChats();
+
+  if (state.current.id === id) {
+    state.current = { id: crypto.randomUUID(), title: "New chat", messages: [] };
+    renderMessages();
+  }
+
+  renderHistory();
+  toast("Conversation deleted.");
+}
+
+function clearAllHistory() {
+  if (!state.chats.length) {
+    toast("No saved conversations.");
+    return;
+  }
+
+  if (!confirm("Delete all saved conversations? This cannot be undone.")) return;
+
+  state.chats = [];
+  saveChats();
+  state.current = { id: crypto.randomUUID(), title: "New chat", messages: [] };
+  renderMessages();
+  renderHistory();
+  toast("All conversations deleted.");
 }
 
 function loadChat(id) {
@@ -52,6 +154,7 @@ function loadChat(id) {
   if (!found || state.streaming) return;
   state.current = structuredClone(found);
   renderMessages();
+  renderHistory();
 }
 
 function newChat() {
@@ -66,7 +169,14 @@ function clearCurrent() {
   if (state.streaming) return;
   state.current.messages = [];
   state.current.title = "New chat";
+  const index = state.chats.findIndex(c => c.id === state.current.id);
+  if (index >= 0) {
+    state.chats.splice(index, 1);
+    saveChats();
+  }
   renderMessages();
+  renderHistory();
+  toast("Current conversation cleared.");
 }
 
 function renderMessages() {
@@ -287,6 +397,7 @@ document.getElementById("settingsBtn").onclick = openSettings;
 document.getElementById("closeSettings").onclick = () => document.getElementById("settingsModal").classList.add("hidden");
 document.getElementById("newChatBtn").onclick = newChat;
 document.getElementById("clearBtn").onclick = clearCurrent;
+document.getElementById("clearHistoryBtn").onclick = clearAllHistory;
 
 document.getElementById("saveSettings").onclick = () => {
   state.apiKey = document.getElementById("apiKey").value.trim();

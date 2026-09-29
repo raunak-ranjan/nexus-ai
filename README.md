@@ -16,6 +16,9 @@ Nexus AI is a frontend AI chat application built as a personal software project 
 - 🔌 OpenRouter API integration
 - 🧠 Model selection
 - 💬 Local conversation history
+- ✎ Rename conversations
+- 🗑️ Delete individual conversations
+- 🧹 Clear all saved conversations
 - 📱 Responsive interface
 - 🔐 Browser-local API-key storage for this demo
 
@@ -72,6 +75,9 @@ For production, Nexus should use a backend/serverless API proxy so the secret re
 - [x] OpenRouter integration
 - [x] Model selection
 - [x] Local chat history
+- [x] Rename conversations
+- [x] Delete conversations
+- [x] Clear conversation history
 - [x] Responsive layout
 - [x] Streaming responses
 - [x] Markdown rendering
