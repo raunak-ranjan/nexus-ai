@@ -9,9 +9,7 @@ Thumbs.db
 .env.*
 !.env.example
 
-# Logs
+# Logs / temporary files
 *.log
-
-# Temporary files
 *.tmp
 *.temp

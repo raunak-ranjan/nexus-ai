@@ -1,7 +1,8 @@
 const state = {
   chats: JSON.parse(localStorage.getItem("nexus_chats") || "[]"),
-  current: { title: "New chat", messages: [] },
-  apiKey: localStorage.getItem("nexus_openrouter_key") || ""
+  current: { id: crypto.randomUUID(), title: "New chat", messages: [] },
+  apiKey: localStorage.getItem("nexus_openrouter_key") || "",
+  streaming: false
 };
 
 const chatEl = document.getElementById("chat");
@@ -11,6 +12,8 @@ const sendBtn = document.getElementById("sendBtn");
 const historyList = document.getElementById("historyList");
 const modelSelect = document.getElementById("modelSelect");
 const toastEl = document.getElementById("toast");
+
+marked.setOptions({ breaks: true, gfm: true });
 
 function toast(message) {
   toastEl.textContent = message;
@@ -24,8 +27,8 @@ function saveChats() {
 
 function saveCurrent() {
   if (!state.current.messages.length) return;
+  const data = { ...structuredClone(state.current), updatedAt: Date.now() };
   const existing = state.chats.findIndex(c => c.id === state.current.id);
-  const data = { ...state.current, updatedAt: Date.now() };
   if (existing >= 0) state.chats[existing] = data;
   else state.chats.push(data);
   saveChats();
@@ -38,6 +41,7 @@ function renderHistory() {
     const button = document.createElement("button");
     button.className = "history-item";
     button.textContent = chat.title || "Untitled chat";
+    button.title = chat.title || "Untitled chat";
     button.onclick = () => loadChat(chat.id);
     historyList.appendChild(button);
   });
@@ -45,16 +49,24 @@ function renderHistory() {
 
 function loadChat(id) {
   const found = state.chats.find(c => c.id === id);
-  if (!found) return;
+  if (!found || state.streaming) return;
   state.current = structuredClone(found);
   renderMessages();
 }
 
 function newChat() {
+  if (state.streaming) return;
   saveCurrent();
   state.current = { id: crypto.randomUUID(), title: "New chat", messages: [] };
   renderMessages();
   inputEl.focus();
+}
+
+function clearCurrent() {
+  if (state.streaming) return;
+  state.current.messages = [];
+  state.current.title = "New chat";
+  renderMessages();
 }
 
 function renderMessages() {
@@ -64,20 +76,88 @@ function renderMessages() {
   scrollToBottom();
 }
 
-function addMessageToUI(role, content) {
+function renderMarkdown(content) {
+  const raw = marked.parse(content || "");
+  return DOMPurify.sanitize(raw);
+}
+
+function addMessageToUI(role, content, streaming = false) {
   const wrap = document.createElement("div");
   wrap.className = `message ${role}`;
+
   const inner = document.createElement("div");
   const label = document.createElement("div");
   label.className = "message-role";
   label.textContent = role === "user" ? "You" : "Nexus";
+
   const bubble = document.createElement("div");
   bubble.className = "message-bubble";
-  bubble.textContent = content;
+
+  if (role === "assistant" && !streaming) {
+    bubble.innerHTML = renderMarkdown(content);
+    addAssistantActions(inner, content);
+  } else if (role === "assistant" && streaming) {
+    bubble.innerHTML = typingHTML();
+  } else {
+    bubble.textContent = content;
+  }
+
   inner.append(label, bubble);
   wrap.appendChild(inner);
   chatEl.appendChild(wrap);
-  return bubble;
+
+  if (role === "assistant" && streaming) wrap.dataset.streaming = "true";
+  return { wrap, bubble, inner };
+}
+
+function typingHTML() {
+  return '<span class="typing"><span></span><span></span><span></span></span>';
+}
+
+function addAssistantActions(inner, content) {
+  const actions = document.createElement("div");
+  actions.className = "assistant-actions";
+
+  const copy = document.createElement("button");
+  copy.className = "action-btn";
+  copy.textContent = "Copy";
+  copy.dataset.copy = content;
+
+  actions.appendChild(copy);
+  inner.appendChild(actions);
+}
+
+function addCodeCopyButtons(container) {
+  container.querySelectorAll("pre").forEach(pre => {
+    if (pre.parentElement.classList.contains("code-block")) return;
+
+    const code = pre.querySelector("code");
+    const block = document.createElement("div");
+    block.className = "code-block";
+
+    const header = document.createElement("div");
+    header.className = "code-header";
+
+    const langClass = [...(code?.classList || [])].find(c => c.startsWith("language-"));
+    const language = langClass ? langClass.replace("language-", "") : "code";
+
+    const label = document.createElement("span");
+    label.textContent = language;
+
+    const button = document.createElement("button");
+    button.className = "code-copy";
+    button.textContent = "Copy";
+    button.dataset.copy = code?.textContent || "";
+
+    header.append(label, button);
+    pre.replaceWith(block);
+    block.append(header, pre);
+  });
+}
+
+function updateStreamingBubble(bubble, text) {
+  bubble.innerHTML = renderMarkdown(text);
+  addCodeCopyButtons(bubble);
 }
 
 function scrollToBottom() {
@@ -86,7 +166,7 @@ function scrollToBottom() {
 
 async function sendMessage(text) {
   const prompt = text.trim();
-  if (!prompt || sendBtn.disabled) return;
+  if (!prompt || state.streaming) return;
 
   if (!state.apiKey) {
     openSettings();
@@ -94,7 +174,6 @@ async function sendMessage(text) {
     return;
   }
 
-  if (!state.current.id) state.current.id = crypto.randomUUID();
   if (!state.current.messages.length) {
     state.current.title = prompt.slice(0, 45) + (prompt.length > 45 ? "…" : "");
   }
@@ -104,10 +183,14 @@ async function sendMessage(text) {
   addMessageToUI("user", prompt);
   inputEl.value = "";
   resizeInput();
+
+  state.streaming = true;
   sendBtn.disabled = true;
 
-  const thinking = addMessageToUI("assistant", "Thinking…");
+  const assistantUI = addMessageToUI("assistant", "", true);
   scrollToBottom();
+
+  let fullText = "";
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -121,23 +204,70 @@ async function sendMessage(text) {
       body: JSON.stringify({
         model: modelSelect.value,
         messages: state.current.messages,
-        temperature: 0.7
+        temperature: 0.7,
+        stream: true
       })
     });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.error?.message || `Request failed (${response.status})`);
+    if (!response.ok) {
+      let message = `Request failed (${response.status})`;
+      try {
+        const data = await response.json();
+        message = data?.error?.message || message;
+      } catch {}
+      throw new Error(message);
+    }
 
-    const answer = data?.choices?.[0]?.message?.content;
-    if (!answer) throw new Error("The model returned an empty response.");
+    if (!response.body) throw new Error("Streaming is not supported by this browser.");
 
-    thinking.textContent = answer;
-    state.current.messages.push({ role: "assistant", content: answer });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop() || "";
+
+      for (const event of events) {
+        const lines = event.split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === "[DONE]") continue;
+
+          try {
+            const json = JSON.parse(payload);
+            const delta = json?.choices?.[0]?.delta?.content || "";
+            if (delta) {
+              fullText += delta;
+              updateStreamingBubble(assistantUI.bubble, fullText);
+              scrollToBottom();
+            }
+          } catch {
+            // Ignore incomplete/non-JSON SSE lines.
+          }
+        }
+      }
+    }
+
+    if (!fullText.trim()) throw new Error("The model returned an empty response.");
+
+    assistantUI.wrap.removeAttribute("data-streaming");
+    assistantUI.bubble.innerHTML = renderMarkdown(fullText);
+    addCodeCopyButtons(assistantUI.bubble);
+    addAssistantActions(assistantUI.inner, fullText);
+
+    state.current.messages.push({ role: "assistant", content: fullText });
     saveCurrent();
   } catch (error) {
-    thinking.textContent = `Error: ${error.message}`;
+    assistantUI.bubble.textContent = `Error: ${error.message}`;
     toast("Nexus couldn't complete the request.");
   } finally {
+    state.streaming = false;
     sendBtn.disabled = false;
     scrollToBottom();
   }
@@ -155,6 +285,8 @@ function openSettings() {
 
 document.getElementById("settingsBtn").onclick = openSettings;
 document.getElementById("closeSettings").onclick = () => document.getElementById("settingsModal").classList.add("hidden");
+document.getElementById("newChatBtn").onclick = newChat;
+document.getElementById("clearBtn").onclick = clearCurrent;
 
 document.getElementById("saveSettings").onclick = () => {
   state.apiKey = document.getElementById("apiKey").value.trim();
@@ -178,12 +310,6 @@ document.getElementById("toggleKey").onclick = () => {
   document.getElementById("toggleKey").textContent = visible ? "Show" : "Hide";
 };
 
-document.getElementById("newChatBtn").onclick = newChat;
-document.getElementById("clearBtn").onclick = () => {
-  state.current.messages = [];
-  renderMessages();
-};
-
 document.getElementById("composer").addEventListener("submit", e => {
   e.preventDefault();
   sendMessage(inputEl.value);
@@ -205,6 +331,20 @@ document.getElementById("menuBtn").onclick = () => document.getElementById("side
 
 document.getElementById("settingsModal").addEventListener("click", e => {
   if (e.target.id === "settingsModal") e.currentTarget.classList.add("hidden");
+});
+
+document.addEventListener("click", async e => {
+  const button = e.target.closest("[data-copy]");
+  if (!button) return;
+
+  try {
+    await navigator.clipboard.writeText(button.dataset.copy);
+    const old = button.textContent;
+    button.textContent = "Copied!";
+    setTimeout(() => button.textContent = old, 1200);
+  } catch {
+    toast("Copy failed. Please copy manually.");
+  }
 });
 
 state.current.id = crypto.randomUUID();
