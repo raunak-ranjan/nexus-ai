@@ -1,32 +1,85 @@
-# Nexus AI 🤖
+# ⚡ Nexus AI
 
-> A secure full-stack AI chat workspace with a browser UI and a server-side OpenRouter API proxy.
+> A modern AI workspace for intelligent conversations, powered by OpenRouter and built with a secure Node.js backend.
 
-## Overview
+🌐 **Live Demo:** https://nexus-ai-production-7702.up.railway.app/
 
-Nexus AI is a personal software project built to explore modern web development, streaming APIs, Markdown rendering, LLM integrations, client-side state, and secure backend architecture.
+💻 **Source Code:** https://github.com/raunak-ranjan/nexus-ai
 
-Version 3 moves the OpenRouter credential out of the browser. The frontend sends chat requests to the Nexus backend, and the backend calls OpenRouter using a server-side environment variable.
+---
+
+## 🚀 Overview
+
+**Nexus AI** is a modern AI chat workspace designed to provide a clean, responsive and focused conversational experience.
+
+The application combines a lightweight frontend with a secure Node.js backend that communicates with the OpenRouter API.
+
+Instead of exposing the API key in the browser, Nexus keeps the credential on the server and forwards validated requests securely to the AI provider.
+
+---
 
 ## ✨ Features
 
-- 🤖 AI-powered chat
-- 🌊 Streaming responses
-- 📝 Markdown rendering
-- 💻 Formatted code blocks
-- 📋 One-click copy for responses and code
-- 🔌 OpenRouter integration through a backend proxy
-- 🧠 Model selection with server-side allowlisting
-- 💬 Local conversation history
-- ✎ Rename conversations
-- 🗑️ Delete individual conversations
-- 🧹 Clear saved conversations
-- 📱 Responsive interface
-- 🔐 Server-side API key storage
+- 🤖 AI-powered conversations
+- ⚡ Streaming AI responses
+- 🧠 Multiple AI model support
+- 💬 Conversational chat interface
+- 🔐 Server-side API key protection
 - 🛡️ Request validation
-- 🚦 Basic per-IP rate limiting
-- 🧱 Security headers
-- ❤️ Backend health endpoint
+- 🚦 Built-in rate limiting
+- 📡 Health-check endpoint
+- 📱 Responsive user interface
+- 🎨 Modern AI workspace design
+- 🌐 Production deployment
+- 🔄 GitHub-connected deployment workflow
+
+---
+
+## 🧠 Supported Models
+
+Nexus AI is configured to support multiple models through OpenRouter:
+
+- `openrouter/free`
+- `openai/gpt-4o-mini`
+- `google/gemini-2.0-flash-001`
+- `anthropic/claude-3.5-haiku`
+
+> Model and provider availability depends on OpenRouter.
+
+---
+
+## 🏗️ Architecture
+
+```text
+User Browser
+     │
+     ▼
+Nexus AI Frontend
+HTML / CSS / JavaScript
+     │
+     │ POST /api/chat
+     ▼
+Node.js Backend
+     │
+     ├── Request validation
+     ├── Rate limiting
+     ├── API key protection
+     └── Streaming
+     │
+     ▼
+OpenRouter API
+     │
+     ▼
+AI Model
+     │
+     ▼
+Streaming Response
+     │
+     ▼
+Nexus AI UI
+```
+
+---
 
 ## 🛠️ Tech Stack
 
@@ -34,38 +87,42 @@ Version 3 moves the OpenRouter credential out of the browser. The frontend sends
 - HTML5
 - CSS3
 - Vanilla JavaScript
-- Marked.js
-- DOMPurify
-- LocalStorage
 
 ### Backend
 - Node.js
-- Native `http` server
-- Native `fetch`
-- OpenRouter API
-- Server-Sent Events streaming
+- Native Node.js HTTP server
+- Server-side API proxy
+- Streaming responses
 
-### Tooling
-- Git
+### AI
+- OpenRouter API
+- Large Language Models (LLMs)
+
+### Deployment
 - GitHub
-- npm
+- Railway
+
+---
 
 ## 📂 Project Structure
 
 ```text
 nexus-ai/
+│
 ├── index.html
 ├── style.css
 ├── script.js
 ├── server.js
 ├── package.json
+├── package-lock.json
 ├── .env.example
 ├── .gitignore
-├── README.md
-└── assets/
+└── README.md
 ```
 
-## 🚀 Run Locally
+---
+
+## ⚙️ Getting Started
 
 ### 1. Clone the repository
 
@@ -74,38 +131,23 @@ git clone https://github.com/raunak-ranjan/nexus-ai.git
 cd nexus-ai
 ```
 
-### 2. Check Node.js
-
-Nexus v3 requires Node.js 18.17+.
+### 2. Install dependencies
 
 ```bash
-node --version
+npm install
 ```
 
 ### 3. Create your environment file
 
-Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-macOS/Linux:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and add your own OpenRouter key:
+Create a file named `.env` and add:
 
 ```env
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
-PORT=3000
+OPENROUTER_API_KEY=your_api_key_here
 HOST=127.0.0.1
 APP_URL=http://localhost:3000
 ```
 
-### 4. Start Nexus
+### 4. Start Nexus AI
 
 ```bash
 npm start
@@ -117,63 +159,52 @@ Open:
 http://localhost:3000
 ```
 
-**Do not open `index.html` directly with Live Server for v3.** The frontend needs the `/api/chat` backend route.
+---
 
-## 🔐 Security Architecture
+## 🔑 Environment Variables
 
-### v2
+| Variable | Description | Example |
+|---|---|---|
+| `OPENROUTER_API_KEY` | OpenRouter authentication key | `sk-or-v1-...` |
+| `HOST` | Server bind address | `127.0.0.1` |
+| `APP_URL` | Application URL | `http://localhost:3000` |
+| `PORT` | Server port | Automatically provided in production |
 
-```text
-Browser → OpenRouter
-           ↑
-        API key
+**Never commit your real `.env` file or API key to GitHub.**
+
+---
+
+## 🔐 Security
+
+Nexus AI keeps the OpenRouter API key on the server instead of exposing it to the browser.
+
+The backend retrieves the key using:
+
+```js
+process.env.OPENROUTER_API_KEY
 ```
 
-The API key was entered into the browser and stored in `localStorage`, which was acceptable only for the earlier demo.
+Additional backend protections include:
 
-### v3
-
-```text
-Browser
-   │
-   │ POST /api/chat
-   ▼
-Nexus Node.js Backend
-   │
-   │ server-side Authorization header
-   ▼
-OpenRouter
-   │
-   ▼
-AI model
-```
-
-The browser never receives `OPENROUTER_API_KEY`.
-
-### Security measures included
-
-- `.env` excluded from Git
-- Server-side API key
-- Model allowlist
-- Request-size limit
-- Message-count limit
-- Message-length validation
-- Basic per-IP rate limiting
+- Request body size limits
+- Message count limits
+- Message length limits
+- Allowed-model validation
+- Message-role validation
+- IP-based rate limiting
 - Security response headers
-- No API key in frontend JavaScript
-- `/api/health` exposes only whether the server is configured, not the secret
 
-**Never commit `.env` or an actual API key to GitHub.**
+---
 
-## 🧪 Test the backend
+## 📡 API
 
-Health check:
+### Health Check
 
-```text
-http://localhost:3000/api/health
+```http
+GET /api/health
 ```
 
-A configured local server should return JSON similar to:
+Example response:
 
 ```json
 {
@@ -183,37 +214,181 @@ A configured local server should return JSON similar to:
 }
 ```
 
-## 🗺️ Roadmap
+### Chat
 
-- [x] Modern chat interface
-- [x] OpenRouter integration
-- [x] Model selection
-- [x] Local chat history
-- [x] Rename conversations
-- [x] Delete conversations
-- [x] Streaming responses
-- [x] Markdown rendering
-- [x] Code blocks
-- [x] Copy buttons
-- [x] Secure backend/API proxy
-- [x] Environment-based secrets
-- [x] Basic request validation
-- [x] Basic rate limiting
-- [ ] Authentication
-- [ ] Cloud-synced conversations
-- [ ] Database persistence
-- [ ] Production deployment
-- [ ] Automated tests
-- [ ] Observability and analytics
+```http
+POST /api/chat
+```
+
+Example request:
+
+```json
+{
+  "model": "openai/gpt-4o-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Explain recursion in simple words."
+    }
+  ]
+}
+```
+
+The response is streamed back to the frontend.
+
+---
+
+## 🛡️ Request Protection
+
+- Maximum request body: **1 MB**
+- Maximum conversation messages: **30**
+- Maximum message length: **12,000 characters**
+- IP-based rate limiting
+- Input validation
+
+---
+
+## 🌐 Production Deployment
+
+Nexus AI is currently deployed on **Railway**.
+
+### Production URL
+
+https://nexus-ai-production-7702.up.railway.app/
+
+### Production Architecture
+
+```text
+GitHub
+   │
+   ▼
+Railway
+   │
+   ▼
+Node.js Server
+   │
+   ▼
+OpenRouter API
+   │
+   ▼
+AI Model
+```
+
+The production server uses Railway's dynamically assigned `PORT` and binds to `0.0.0.0`.
+
+---
+
+## 🔄 Deployment Workflow
+
+```bash
+git add .
+git commit -m "update Nexus AI"
+git push origin main
+```
+
+Changes pushed to the main branch can then be deployed through the connected Railway service.
+
+---
+
+## 🧪 Development
+
+Start the local server:
+
+```bash
+npm start
+```
+
+Local application:
+
+```text
+http://localhost:3000
+```
+
+Health check:
+
+```text
+http://localhost:3000/api/health
+```
+
+---
+
+## 🎯 Project Goals
+
+Nexus AI is being developed with the following goals:
+
+- Build a clean AI-first workspace
+- Learn full-stack web development
+- Understand AI API integration
+- Implement secure server-side API handling
+- Explore streaming AI responses
+- Build and deploy a real-world application
+- Continuously improve the user experience
+
+---
+
+## 🔮 Roadmap
+
+- [ ] User authentication
+- [ ] Cloud conversation history
+- [ ] Conversation search
+- [ ] Custom system prompts
+- [ ] Advanced model settings
+- [ ] File uploads
+- [ ] Image understanding
+- [ ] Voice interaction
+- [ ] AI-generated summaries
+- [ ] Export conversations
+- [ ] PWA support
+- [ ] Improved mobile experience
+- [ ] Usage analytics
+- [ ] Custom domain
+
+---
+
+## 📸 Screenshots
+
+Add screenshots of the Nexus AI interface here when available.
+
+Example:
+
+```markdown
+![Nexus AI Workspace](screenshots/nexus-ai.png)
+```
+
+---
+
+## 📜 License
+
+This project is currently provided for educational and personal development purposes.
+
+If you plan to publish or distribute Nexus AI commercially, add an appropriate open-source license.
+
+---
 
 ## 👨‍💻 Author
 
-**Raunak Ranjan**
+### Raunak Ranjan
 
-CSE Student @ KIIT
+Computer Science & Engineering student and developer interested in:
 
-- GitHub: https://github.com/raunak-ranjan
+- Artificial Intelligence
+- Web Development
+- Software Engineering
+- AI Applications
+- Emerging Technologies
 
-## License
+**GitHub:** https://github.com/raunak-ranjan
 
-No open-source license has been added yet.
+---
+
+## ⭐ Support
+
+If you find Nexus AI interesting, consider giving the repository a ⭐.
+
+It helps the project get more visibility and motivates further development.
+
+---
+
+<p align="center">
+  <strong>Built with curiosity, code, and AI. ⚡</strong>
+</p>
