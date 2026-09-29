@@ -1,113 +1,91 @@
 # Nexus AI 🤖
 
-> An AI-powered web application built to explore modern AI interfaces and LLM-powered experiences.
+> A clean, browser-based AI chat workspace powered by OpenRouter.
 
-## 🚀 Overview
+## Overview
 
-**Nexus AI** is a web-based AI application designed to provide a clean and interactive interface for communicating with modern AI models.
+Nexus AI is a frontend AI chat application built as a personal software project to explore modern web development, API integration, and LLM-powered user experiences.
 
-The project focuses on combining a simple, responsive frontend with AI APIs to create a practical and accessible AI experience.
+The interface is intentionally simple: choose a model, start a conversation, and keep local conversation history in the browser.
 
-## ✨ Features
+## Features
 
-- 🤖 AI-powered conversations
-- 💬 Interactive chat interface
-- ⚡ Fast and responsive UI
-- 🌐 Web-based application
-- 🔌 AI API integration
-- 📱 Responsive design
-- 🎨 Clean and minimal interface
+- AI-powered chat
+- OpenRouter API integration
+- Model selection
+- New conversation workflow
+- Local conversation history
+- Responsive dark interface
+- Keyboard-friendly composer
+- Local API-key storage for this demo
+- Mobile navigation
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Technology | Purpose |
-|---|---|
-| HTML5 | Application structure |
-| CSS3 | Styling and responsive UI |
-| JavaScript | Application logic |
-| AI APIs | AI model integration |
-| Git | Version control |
-| GitHub | Source control & collaboration |
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- OpenRouter API
+- Git & GitHub
+- LocalStorage
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 nexus-ai/
-│
 ├── index.html
 ├── style.css
 ├── script.js
-│
-├── assets/
-│   └── images/
-│
-└── README.md
+├── .gitignore
+├── README.md
+└── assets/
 ```
 
-## ⚙️ Getting Started
+## Run Locally
 
-### 1. Clone the repository
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/raunak-ranjan/nexus-ai.git
-```
-
-### 2. Open the project
-
-```bash
 cd nexus-ai
 ```
 
-### 3. Run the application
+2. Open `index.html` in a browser, or use VS Code Live Server.
 
-Open `index.html` in your browser.
+3. Open **Settings** inside Nexus and add your OpenRouter API key.
 
-For the best development experience, use **VS Code** with a local development server such as Live Server.
+4. Select a model and start chatting.
 
-## 🔐 API Security
+## Security Note
 
-> **Never commit API keys, passwords, tokens, or other secrets to GitHub.**
+This version is a **frontend portfolio/demo project**. The API key is entered by the user and stored in the browser's localStorage.
 
-If the application uses an AI API, keep sensitive credentials outside the public repository and use an appropriate backend or environment-variable-based setup.
+**Never put a real API key directly into `script.js`, `index.html`, or any file committed to GitHub.**
 
-## 🖼️ Screenshots
+For production, Nexus should use a backend/serverless function so the secret API key remains server-side.
 
-Screenshots of Nexus AI will be added here.
+## Roadmap
 
-## 🗺️ Roadmap
+- [x] Modern chat interface
+- [x] OpenRouter integration
+- [x] Model selection
+- [x] Local chat history
+- [x] Responsive layout
+- [ ] Streaming responses
+- [ ] Markdown rendering
+- [ ] Code syntax highlighting
+- [ ] Backend/API proxy
+- [ ] Authentication
+- [ ] Cloud-synced conversations
 
-- [x] Initial web interface
-- [x] Basic AI integration
-- [ ] Conversation history
-- [ ] Multiple model support
-- [ ] Improved error handling
-- [ ] User authentication
-- [ ] Better mobile experience
-- [ ] Backend integration
-
-## 🎯 Future Improvements
-
-Nexus AI will continue evolving with the goal of becoming a more complete AI application.
-
-Planned improvements include:
-
-- Better conversation management
-- Model selection
-- Persistent chat history
-- Improved UI/UX
-- Backend architecture
-- Authentication
-- More AI capabilities
-
-## 👨‍💻 Author
+## Author
 
 **Raunak Ranjan**
 
 CSE Student @ KIIT
 
-- GitHub: [@raunak-ranjan](https://github.com/raunak-ranjan)
-- LinkedIn: Add your LinkedIn profile here
+- GitHub: https://github.com/raunak-ranjan
 
-## 📄 License
+## License
 
-This project currently does not include an open-source license.
+No open-source license has been added yet.

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Nexus AI — a clean browser-based AI chat interface powered by OpenRouter.">
+  <title>Nexus AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">N</div>
+        <div>
+          <strong>Nexus</strong>
+          <span>AI Workspace</span>
+        </div>
+      </div>
+
+      <button class="new-chat-btn" id="newChatBtn">＋ New chat</button>
+
+      <div class="sidebar-section">
+        <div class="section-label">Conversations</div>
+        <div id="historyList" class="history-list"></div>
+      </div>
+
+      <div class="sidebar-bottom">
+        <button class="side-btn" id="settingsBtn">⚙ Settings</button>
+        <a class="side-btn link-btn" href="https://github.com/raunak-ranjan/nexus-ai" target="_blank" rel="noreferrer">⌘ GitHub</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menuBtn" aria-label="Open menu">☰</button>
+        <div class="model-area">
+          <span class="status-dot"></span>
+          <select id="modelSelect" aria-label="AI model">
+            <option value="openrouter/free">OpenRouter Free Router</option>
+            <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
+            <option value="anthropic/claude-3.5-haiku">Claude 3.5 Haiku</option>
+          </select>
+        </div>
+        <button class="icon-btn" id="clearBtn" title="Clear current chat">⌫</button>
+      </header>
+
+      <section class="chat" id="chat">
+        <div class="welcome" id="welcome">
+          <div class="hero-logo">✦</div>
+          <h1>What can I help you build?</h1>
+          <p>Ask Nexus to explain, create, debug, brainstorm, or research.</p>
+          <div class="suggestions">
+            <button data-prompt="Explain recursion in C++ with a simple example.">Explain a concept</button>
+            <button data-prompt="Build a simple HTML/CSS landing page for a student developer portfolio.">Build something</button>
+            <button data-prompt="Give me a 7-day plan to improve my DSA fundamentals.">Make a study plan</button>
+            <button data-prompt="Review this JavaScript idea and suggest cleaner architecture.">Improve my code</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="composer-wrap">
+        <form class="composer" id="composer">
+          <textarea id="promptInput" rows="1" placeholder="Message Nexus..." autocomplete="off"></textarea>
+          <button class="send-btn" id="sendBtn" type="submit" aria-label="Send message">↑</button>
+        </form>
+        <div class="composer-note">Nexus can make mistakes. Verify important information.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="settingsTitle">Settings</h2>
+          <p>Your API key is stored only in this browser.</p>
+        </div>
+        <button class="icon-btn" id="closeSettings">×</button>
+      </div>
+      <label for="apiKey">OpenRouter API key</label>
+      <div class="key-row">
+        <input id="apiKey" type="password" placeholder="sk-or-v1-..." spellcheck="false">
+        <button class="secondary-btn" id="toggleKey" type="button">Show</button>
+      </div>
+      <p class="security-note">For this portfolio demo, the key is kept in localStorage and is never written to the repository. For a production app, use a backend so the secret never reaches the browser.</p>
+      <div class="modal-actions">
+        <button class="secondary-btn" id="removeKey" type="button">Remove key</button>
+        <button class="primary-btn" id="saveSettings" type="button">Save settings</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="script.js"></script>
+</body>
+</html>
