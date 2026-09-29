@@ -1,7 +1,6 @@
 const state = {
   chats: JSON.parse(localStorage.getItem("nexus_chats") || "[]"),
   current: { id: crypto.randomUUID(), title: "New chat", messages: [] },
-  apiKey: localStorage.getItem("nexus_openrouter_key") || "",
   streaming: false
 };
 
@@ -278,12 +277,6 @@ async function sendMessage(text) {
   const prompt = text.trim();
   if (!prompt || state.streaming) return;
 
-  if (!state.apiKey) {
-    openSettings();
-    toast("Add your OpenRouter API key first.");
-    return;
-  }
-
   if (!state.current.messages.length) {
     state.current.title = prompt.slice(0, 45) + (prompt.length > 45 ? "…" : "");
   }
@@ -303,19 +296,14 @@ async function sendMessage(text) {
   let fullText = "";
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("/api/chat", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${state.apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": window.location.href,
-        "X-Title": "Nexus AI"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: modelSelect.value,
-        messages: state.current.messages,
-        temperature: 0.7,
-        stream: true
+        messages: state.current.messages
       })
     });
 
@@ -388,9 +376,31 @@ function resizeInput() {
   inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + "px";
 }
 
+async function checkBackend() {
+  const status = document.getElementById("backendStatus");
+  status.classList.remove("online", "offline");
+  status.querySelector("strong").textContent = "Checking backend…";
+
+  try {
+    const response = await fetch("/api/health", { cache: "no-store" });
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) throw new Error(data.error || "Backend unavailable.");
+
+    status.classList.add("online");
+    status.querySelector("strong").textContent =
+      data.configured ? "Backend connected • API key configured" : "Backend connected • API key missing";
+    toast(data.configured ? "Secure backend is ready." : "Backend is running, but the API key is missing.");
+  } catch {
+    status.classList.add("offline");
+    status.querySelector("strong").textContent = "Backend unavailable";
+    toast("Start Nexus with npm start.");
+  }
+}
+
 function openSettings() {
-  document.getElementById("apiKey").value = state.apiKey;
   document.getElementById("settingsModal").classList.remove("hidden");
+  checkBackend();
 }
 
 document.getElementById("settingsBtn").onclick = openSettings;
@@ -399,27 +409,7 @@ document.getElementById("newChatBtn").onclick = newChat;
 document.getElementById("clearBtn").onclick = clearCurrent;
 document.getElementById("clearHistoryBtn").onclick = clearAllHistory;
 
-document.getElementById("saveSettings").onclick = () => {
-  state.apiKey = document.getElementById("apiKey").value.trim();
-  if (state.apiKey) localStorage.setItem("nexus_openrouter_key", state.apiKey);
-  else localStorage.removeItem("nexus_openrouter_key");
-  document.getElementById("settingsModal").classList.add("hidden");
-  toast(state.apiKey ? "API key saved locally." : "API key removed.");
-};
-
-document.getElementById("removeKey").onclick = () => {
-  state.apiKey = "";
-  localStorage.removeItem("nexus_openrouter_key");
-  document.getElementById("apiKey").value = "";
-  toast("API key removed.");
-};
-
-document.getElementById("toggleKey").onclick = () => {
-  const field = document.getElementById("apiKey");
-  const visible = field.type === "text";
-  field.type = visible ? "password" : "text";
-  document.getElementById("toggleKey").textContent = visible ? "Show" : "Hide";
-};
+document.getElementById("checkBackend").onclick = checkBackend;
 
 document.getElementById("composer").addEventListener("submit", e => {
   e.preventDefault();

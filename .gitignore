@@ -1,15 +1,16 @@
-# Local / editor files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Local environment files
+# Secrets
 .env
 .env.*
 !.env.example
 
-# Logs / temporary files
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
 *.log
-*.tmp
-*.temp
+
+# Dependencies
+node_modules/

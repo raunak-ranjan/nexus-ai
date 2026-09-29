@@ -75,20 +75,21 @@
       <div class="modal-header">
         <div>
           <h2 id="settingsTitle">Settings</h2>
-          <p>Your API key is stored only in this browser.</p>
+          <p>Nexus v3 uses a server-side API proxy.</p>
         </div>
         <button class="icon-btn" id="closeSettings">×</button>
       </div>
-      <label for="apiKey">OpenRouter API key</label>
-      <div class="key-row">
-        <input id="apiKey" type="password" placeholder="sk-or-v1-..." spellcheck="false">
-        <button class="secondary-btn" id="toggleKey" type="button">Show</button>
+      <div class="backend-status" id="backendStatus">
+        <span class="status-dot"></span>
+        <div>
+          <strong>Secure backend mode</strong>
+          <p>OpenRouter credentials stay on the server and are never sent to the browser.</p>
+        </div>
       </div>
-      <p class="security-note">For this portfolio demo, the key is kept in localStorage and is never written to the repository. For production, use a backend so the secret never reaches the browser.</p>
+      <p class="security-note">Configure <code>OPENROUTER_API_KEY</code> in the server-side <code>.env</code> file. Never commit that file to GitHub.</p>
       <div class="modal-actions">
         <button class="secondary-btn danger-outline" id="clearHistoryBtn" type="button">Clear history</button>
-        <button class="secondary-btn" id="removeKey" type="button">Remove key</button>
-        <button class="primary-btn" id="saveSettings" type="button">Save settings</button>
+        <button class="primary-btn" id="checkBackend" type="button">Check backend</button>
       </div>
     </div>
   </div>

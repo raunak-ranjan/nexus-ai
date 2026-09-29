@@ -1,10 +1,12 @@
 # Nexus AI 🤖
 
-> A clean, browser-based AI chat workspace powered by OpenRouter.
+> A secure full-stack AI chat workspace with a browser UI and a server-side OpenRouter API proxy.
 
 ## Overview
 
-Nexus AI is a frontend AI chat application built as a personal software project to explore modern web development, streaming APIs, Markdown rendering, and LLM-powered user experiences.
+Nexus AI is a personal software project built to explore modern web development, streaming APIs, Markdown rendering, LLM integrations, client-side state, and secure backend architecture.
+
+Version 3 moves the OpenRouter credential out of the browser. The frontend sends chat requests to the Nexus backend, and the backend calls OpenRouter using a server-side environment variable.
 
 ## ✨ Features
 
@@ -13,25 +15,40 @@ Nexus AI is a frontend AI chat application built as a personal software project 
 - 📝 Markdown rendering
 - 💻 Formatted code blocks
 - 📋 One-click copy for responses and code
-- 🔌 OpenRouter API integration
-- 🧠 Model selection
+- 🔌 OpenRouter integration through a backend proxy
+- 🧠 Model selection with server-side allowlisting
 - 💬 Local conversation history
 - ✎ Rename conversations
 - 🗑️ Delete individual conversations
-- 🧹 Clear all saved conversations
+- 🧹 Clear saved conversations
 - 📱 Responsive interface
-- 🔐 Browser-local API-key storage for this demo
+- 🔐 Server-side API key storage
+- 🛡️ Request validation
+- 🚦 Basic per-IP rate limiting
+- 🧱 Security headers
+- ❤️ Backend health endpoint
 
 ## 🛠️ Tech Stack
 
+### Frontend
 - HTML5
 - CSS3
 - Vanilla JavaScript
-- OpenRouter API
 - Marked.js
 - DOMPurify
 - LocalStorage
-- Git & GitHub
+
+### Backend
+- Node.js
+- Native `http` server
+- Native `fetch`
+- OpenRouter API
+- Server-Sent Events streaming
+
+### Tooling
+- Git
+- GitHub
+- npm
 
 ## 📂 Project Structure
 
@@ -40,34 +57,131 @@ nexus-ai/
 ├── index.html
 ├── style.css
 ├── script.js
+├── server.js
+├── package.json
+├── .env.example
 ├── .gitignore
 ├── README.md
 └── assets/
 ```
 
-## ⚙️ Run Locally
+## 🚀 Run Locally
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/raunak-ranjan/nexus-ai.git
 cd nexus-ai
 ```
 
-Open `index.html` with VS Code Live Server.
+### 2. Check Node.js
 
-Then:
+Nexus v3 requires Node.js 18.17+.
 
-1. Open **Settings**.
-2. Add your OpenRouter API key.
-3. Select a model.
-4. Send a message.
+```bash
+node --version
+```
 
-## 🔐 Security
+### 3. Create your environment file
 
-This is a frontend portfolio/demo project. The user enters their OpenRouter API key and the key is stored in browser `localStorage`.
+Windows PowerShell:
 
-**Never hard-code an API key into this repository.**
+```powershell
+Copy-Item .env.example .env
+```
 
-For production, Nexus should use a backend/serverless API proxy so the secret remains server-side.
+macOS/Linux:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and add your own OpenRouter key:
+
+```env
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+PORT=3000
+HOST=127.0.0.1
+APP_URL=http://localhost:3000
+```
+
+### 4. Start Nexus
+
+```bash
+npm start
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+**Do not open `index.html` directly with Live Server for v3.** The frontend needs the `/api/chat` backend route.
+
+## 🔐 Security Architecture
+
+### v2
+
+```text
+Browser → OpenRouter
+           ↑
+        API key
+```
+
+The API key was entered into the browser and stored in `localStorage`, which was acceptable only for the earlier demo.
+
+### v3
+
+```text
+Browser
+   │
+   │ POST /api/chat
+   ▼
+Nexus Node.js Backend
+   │
+   │ server-side Authorization header
+   ▼
+OpenRouter
+   │
+   ▼
+AI model
+```
+
+The browser never receives `OPENROUTER_API_KEY`.
+
+### Security measures included
+
+- `.env` excluded from Git
+- Server-side API key
+- Model allowlist
+- Request-size limit
+- Message-count limit
+- Message-length validation
+- Basic per-IP rate limiting
+- Security response headers
+- No API key in frontend JavaScript
+- `/api/health` exposes only whether the server is configured, not the secret
+
+**Never commit `.env` or an actual API key to GitHub.**
+
+## 🧪 Test the backend
+
+Health check:
+
+```text
+http://localhost:3000/api/health
+```
+
+A configured local server should return JSON similar to:
+
+```json
+{
+  "ok": true,
+  "service": "nexus-api",
+  "configured": true
+}
+```
 
 ## 🗺️ Roadmap
 
@@ -77,16 +191,20 @@ For production, Nexus should use a backend/serverless API proxy so the secret re
 - [x] Local chat history
 - [x] Rename conversations
 - [x] Delete conversations
-- [x] Clear conversation history
-- [x] Responsive layout
 - [x] Streaming responses
 - [x] Markdown rendering
 - [x] Code blocks
 - [x] Copy buttons
-- [ ] Backend/API proxy
+- [x] Secure backend/API proxy
+- [x] Environment-based secrets
+- [x] Basic request validation
+- [x] Basic rate limiting
 - [ ] Authentication
 - [ ] Cloud-synced conversations
+- [ ] Database persistence
 - [ ] Production deployment
+- [ ] Automated tests
+- [ ] Observability and analytics
 
 ## 👨‍💻 Author
 

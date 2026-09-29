@@ -249,3 +249,32 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   .history-menu-btn { opacity: 1; }
 }
+
+
+/* v3 secure backend status */
+.backend-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #11141b;
+  margin: 8px 0 12px;
+}
+.backend-status .status-dot {
+  margin-top: 5px;
+  flex: 0 0 auto;
+}
+.backend-status strong {
+  display: block;
+  font-size: 13px;
+}
+.backend-status p {
+  margin: 4px 0 0;
+  color: #858b99;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.backend-status.online .status-dot { background: #31d158; box-shadow: 0 0 10px rgba(49,209,88,.35); }
+.backend-status.offline .status-dot { background: #ff5f57; box-shadow: 0 0 10px rgba(255,95,87,.25); }

@@ -1,0 +1,13 @@
+{
+  "name": "nexus-ai",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Nexus AI \u2014 a secure full-stack AI chat workspace with an OpenRouter backend proxy.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}
