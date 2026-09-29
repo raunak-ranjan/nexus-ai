@@ -352,7 +352,7 @@ Add screenshots of the Nexus AI interface here when available.
 Example:
 
 ```markdown
-![Nexus AI Workspace](screenshots/nexus-ai.png)
+![Nexus AI Workspace](https://tinyurl.com/screenshots-nexus-ai-png)
 ```
 
 ---
