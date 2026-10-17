@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Nexus AI — a clean browser-based AI chat workspace powered by OpenRouter.">
+  <meta name="description" content="Nexus AI — a thoughtful workspace for your ideas, powered by OpenRouter.">
   <title>Nexus AI</title>
+  <meta name="theme-color" content="#09111d">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,13 +13,16 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
+    <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+    <aside class="sidebar" id="sidebar" aria-label="Conversation sidebar">
       <div class="brand">
-        <div class="brand-mark">N</div>
-        <div><strong>Nexus</strong><span>AI Workspace</span></div>
+        <div class="brand-mark" aria-hidden="true">N</div>
+        <div class="brand-copy"><strong>Nexus</strong><span>AI workspace</span></div>
+        <button class="icon-btn sidebar-close" id="closeMenuBtn" type="button" aria-label="Close navigation">×</button>
       </div>
 
-      <button class="new-chat-btn" id="newChatBtn">＋ New chat</button>
+      <button class="new-chat-btn" id="newChatBtn" type="button"><span aria-hidden="true">＋</span> New chat</button>
+      <button class="side-btn threadline-link" id="threadlineBtn" type="button"><span aria-hidden="true">⌁</span> Threadline <span id="threadlineCount" class="threadline-count">0</span></button>
 
       <div class="sidebar-section">
         <div class="section-label">Conversations</div>
@@ -26,16 +30,18 @@
       </div>
 
       <div class="sidebar-bottom">
-        <button class="side-btn" id="settingsBtn">⚙ Settings</button>
-        <a class="side-btn link-btn" href="https://github.com/raunak-ranjan/nexus-ai" target="_blank" rel="noreferrer">⌘ GitHub</a>
+        <button class="side-btn" id="settingsBtn" type="button"><span aria-hidden="true">⚙</span> Settings</button>
+        <a class="side-btn link-btn" href="https://github.com/raunak-ranjan/nexus-ai" target="_blank" rel="noreferrer"><span aria-hidden="true">↗</span> GitHub</a>
       </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
-        <button class="icon-btn mobile-only" id="menuBtn" aria-label="Open menu">☰</button>
+        <button class="icon-btn mobile-only" id="menuBtn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+        <div class="topbar-context"><span class="eyebrow">YOUR CREATIVE SPACE</span><span class="topbar-title">Nexus <span>AI</span></span></div>
         <div class="model-area">
-          <span class="status-dot"></span>
+          <span class="status-dot" aria-hidden="true"></span>
+          <label class="sr-only" for="modelSelect">Choose AI model</label>
           <select id="modelSelect" aria-label="AI model">
             <option value="openrouter/free">🆓 OpenRouter Free Router</option>
             <option value="openai/gpt-4o-mini">⚡ GPT-4o Mini</option>
@@ -43,31 +49,65 @@
             <option value="anthropic/claude-3.5-haiku">⚡ Claude 3.5 Haiku</option>
           </select>
         </div>
-        <button class="icon-btn" id="clearBtn" title="Clear current chat">⌫</button>
+        <div class="topbar-actions">
+          <button class="icon-btn theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme" title="Switch theme"><span class="theme-icon" aria-hidden="true">☼</span></button>
+          <button class="icon-btn" id="clearBtn" type="button" title="Clear current chat" aria-label="Clear current chat">⌫</button>
+        </div>
       </header>
 
       <section class="chat" id="chat">
         <div class="welcome" id="welcome">
-          <div class="hero-logo">✦</div>
-          <h1>What can I help you build?</h1>
-          <p>Ask Nexus to explain, create, debug, brainstorm, or research.</p>
+          <div class="hero-orbit" aria-hidden="true"><div class="hero-logo">✦</div></div>
+          <p class="welcome-kicker">A LITTLE SPARK GOES A LONG WAY</p>
+          <h1>What are we <span>imagining</span> today?</h1>
+          <p class="welcome-copy">Bring a question, a half-formed idea, or a tricky problem. We’ll work through it together.</p>
           <div class="suggestions">
-            <button data-prompt="Explain recursion in C++ with a simple example.">Explain a concept</button>
-            <button data-prompt="Build a simple HTML/CSS landing page for a student developer portfolio.">Build something</button>
-            <button data-prompt="Give me a 7-day plan to improve my DSA fundamentals.">Make a study plan</button>
-            <button data-prompt="Review this JavaScript idea and suggest cleaner architecture.">Improve my code</button>
+            <button type="button" data-prompt="Explain recursion in C++ with a simple example."><span class="suggestion-icon" aria-hidden="true">✳</span><span><strong>Explain a concept</strong><small>Make something complex click</small></span><span class="suggestion-arrow" aria-hidden="true">↗</span></button>
+            <button type="button" data-prompt="Build a simple HTML/CSS landing page for a student developer portfolio."><span class="suggestion-icon" aria-hidden="true">⌘</span><span><strong>Build something</strong><small>Turn an idea into a first draft</small></span><span class="suggestion-arrow" aria-hidden="true">↗</span></button>
+            <button type="button" data-prompt="Give me a 7-day plan to improve my DSA fundamentals."><span class="suggestion-icon" aria-hidden="true">◷</span><span><strong>Make a study plan</strong><small>Find a rhythm that works</small></span><span class="suggestion-arrow" aria-hidden="true">↗</span></button>
+            <button type="button" data-prompt="Review this JavaScript idea and suggest cleaner architecture."><span class="suggestion-icon" aria-hidden="true">⌘</span><span><strong>Improve my code</strong><small>Explore a cleaner approach</small></span><span class="suggestion-arrow" aria-hidden="true">↗</span></button>
           </div>
         </div>
       </section>
 
       <div class="composer-wrap">
         <form class="composer" id="composer">
-          <textarea id="promptInput" rows="1" placeholder="Message Nexus..." autocomplete="off"></textarea>
+          <label class="sr-only" for="promptInput">Message Nexus</label>
+          <textarea id="promptInput" rows="1" placeholder="Ask anything, or describe what you’re working on…" autocomplete="off"></textarea>
           <button class="send-btn" id="sendBtn" type="submit" aria-label="Send message">↑</button>
         </form>
-        <div class="composer-note">Nexus can make mistakes. Verify important information.</div>
+        <div class="composer-note"><span class="composer-hint">Enter to send <kbd>↵</kbd> <span class="hint-divider">·</span> Shift + Enter for a new line</span><span>Nexus can make mistakes. Verify important information.</span></div>
       </div>
     </main>
+  </div>
+
+  <div class="threadline-shell hidden" id="threadlineWorkspace" role="dialog" aria-modal="true" aria-labelledby="threadlineTitle" tabindex="-1">
+    <section class="threadline-panel">
+      <header class="threadline-header">
+        <div><p class="eyebrow">YOUR CONTINUITY SPACE</p><h1 id="threadlineTitle">Threadline</h1><p>Keep useful context, decisions, commitments, and questions close at hand.</p></div>
+        <button class="icon-btn" id="closeThreadline" type="button" aria-label="Close Threadline">×</button>
+      </header>
+      <p class="threadline-privacy">Stored in this browser only. Local storage is not a backup. Confirmed means you saved it, not that Nexus independently verified it.</p>
+      <div class="threadline-toolbar">
+        <label class="sr-only" for="threadlineSearch">Search Threadline</label><input id="threadlineSearch" type="search" placeholder="Search Threadline…">
+        <label class="sr-only" for="threadlineTypeFilter">Filter by type</label><select id="threadlineTypeFilter"><option value="all">All types</option><option value="memory">Memory</option><option value="decision">Decision</option><option value="commitment">Commitment</option><option value="open_question">Open question</option></select>
+        <label class="sr-only" for="threadlineStatusFilter">Filter by status</label><select id="threadlineStatusFilter"><option value="active">Active</option><option value="deferred">Deferred</option><option value="completed">Completed</option><option value="archived">Archived</option><option value="all">All statuses</option></select>
+        <button class="primary-btn" id="newThreadlineItem" type="button">＋ New item</button>
+      </div>
+      <div class="threadline-list" id="threadlineList" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <div class="modal hidden" id="threadlineItemModal" role="dialog" aria-modal="true" aria-labelledby="threadlineFormTitle">
+    <form class="modal-card threadline-form" id="threadlineForm">
+      <div class="modal-header"><div><h2 id="threadlineFormTitle">New Threadline item</h2><p id="threadlineFormNote">Saved locally in this browser.</p></div><button class="icon-btn" id="closeThreadlineForm" type="button" aria-label="Close item form">×</button></div>
+      <label for="itemType">Type</label><select id="itemType" required><option value="memory">Memory</option><option value="decision">Decision</option><option value="commitment">Commitment</option><option value="open_question">Open question</option></select>
+      <label for="itemTitle">Title</label><input id="itemTitle" maxlength="120" required>
+      <label for="itemContent">Content</label><textarea id="itemContent" rows="5" maxlength="4000" required></textarea>
+      <p class="source-preview" id="itemSourcePreview"></p>
+      <p class="threadline-form-error" id="threadlineFormError" role="alert"></p>
+      <div class="modal-actions"><button class="secondary-btn" id="cancelThreadlineForm" type="button">Cancel</button><button class="primary-btn" type="submit">Save item</button></div>
+    </form>
   </div>
 
   <div class="modal hidden" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
@@ -77,7 +117,7 @@
           <h2 id="settingsTitle">Settings</h2>
           <p>Nexus v3 uses a server-side API proxy.</p>
         </div>
-        <button class="icon-btn" id="closeSettings">×</button>
+        <button class="icon-btn" id="closeSettings" type="button" aria-label="Close settings">×</button>
       </div>
       <div class="backend-status" id="backendStatus">
         <span class="status-dot"></span>
@@ -94,7 +134,8 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="sr-only" id="announcer" aria-live="polite" aria-atomic="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <!-- Markdown + sanitization for AI responses -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

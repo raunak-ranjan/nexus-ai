@@ -3,12 +3,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
-loadEnvFile();
-
-const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || "127.0.0.1";
-const API_KEY = process.env.OPENROUTER_API_KEY || "";
-const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 const MAX_BODY_BYTES = 1024 * 1024;
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_CHARS = 12000;
@@ -36,6 +30,13 @@ const MIME = {
   ".ico": "image/x-icon"
 };
 
+const PUBLIC_ASSETS = new Map([
+  ["/", "index.html"],
+  ["/index.html", "index.html"],
+  ["/style.css", "style.css"],
+  ["/script.js", "script.js"]
+]);
+
 function loadEnvFile() {
   const envPath = path.join(__dirname, ".env");
   if (!fs.existsSync(envPath)) return;
@@ -61,7 +62,20 @@ function loadEnvFile() {
   }
 }
 
+const CONTENT_SECURITY_POLICY =
+  "default-src 'self'; " +
+  "script-src 'self' https://cdn.jsdelivr.net; " +
+  "style-src 'self' https://fonts.googleapis.com; " +
+  "font-src 'self' https://fonts.gstatic.com; " +
+  "img-src 'self' data:; " +
+  "connect-src 'self'; " +
+  "object-src 'none'; " +
+  "base-uri 'self'; " +
+  "form-action 'self'; " +
+  "frame-ancestors 'none'";
+
 function securityHeaders(res) {
+  res.setHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -105,20 +119,25 @@ function readJson(req) {
   return new Promise((resolve, reject) => {
     let size = 0;
     let body = "";
+    let settled = false;
 
     req.setEncoding("utf8");
 
     req.on("data", chunk => {
+      if (settled) return;
       size += Buffer.byteLength(chunk);
       if (size > MAX_BODY_BYTES) {
+        settled = true;
+        req.pause();
         reject(Object.assign(new Error("Request body is too large."), { status: 413 }));
-        req.destroy();
         return;
       }
       body += chunk;
     });
 
     req.on("end", () => {
+      if (settled) return;
+      settled = true;
       try {
         resolve(JSON.parse(body || "{}"));
       } catch {
@@ -126,7 +145,11 @@ function readJson(req) {
       }
     });
 
-    req.on("error", reject);
+    req.on("error", error => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    });
   });
 }
 
@@ -168,8 +191,8 @@ function validateChatPayload(payload) {
   return { model, messages: cleanMessages };
 }
 
-async function handleChat(req, res) {
-  if (!API_KEY) {
+async function handleChat(req, res, { apiKey, appUrl, fetchImpl }) {
+  if (!apiKey) {
     return sendJson(res, 503, {
       error: "Server API key is not configured. Add OPENROUTER_API_KEY to .env."
     });
@@ -185,6 +208,14 @@ async function handleChat(req, res) {
   try {
     payload = await readJson(req);
   } catch (error) {
+    if (res.destroyed || res.writableEnded || req.aborted) {
+      if (!res.destroyed && !res.writableEnded) res.destroy();
+      return;
+    }
+    if (error.status === 413) {
+      res.shouldKeepAlive = false;
+      res.setHeader("Connection", "close");
+    }
     return sendJson(res, error.status || 400, { error: error.message });
   }
 
@@ -197,12 +228,12 @@ async function handleChat(req, res) {
 
   let upstream;
   try {
-    upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    upstream = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": APP_URL,
+        "HTTP-Referer": appUrl,
         "X-Title": "Nexus AI"
       },
       body: JSON.stringify({
@@ -248,55 +279,89 @@ async function handleChat(req, res) {
 }
 
 function serveStatic(req, res) {
-  let pathname = decodeURIComponent(new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname);
-
-  if (pathname === "/") pathname = "/index.html";
-
-  const publicRoot = path.resolve(__dirname);
-  const requested = path.resolve(publicRoot, `.${pathname}`);
-
-  if (!requested.startsWith(publicRoot + path.sep)) {
-    return sendJson(res, 403, { error: "Forbidden." });
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+  } catch {
+    return sendJson(res, 400, { error: "Invalid URL." });
   }
 
-  fs.stat(requested, (error, stat) => {
-    if (error || !stat.isFile()) {
-      return sendJson(res, 404, { error: "Not found." });
-    }
+  const assetName = PUBLIC_ASSETS.get(pathname);
+  if (!assetName) return sendJson(res, 404, { error: "Not found." });
 
-    securityHeaders(res);
-    res.setHeader("Cache-Control", pathname === "/index.html" ? "no-cache" : "public, max-age=3600");
-    res.setHeader("Content-Type", MIME[path.extname(requested).toLowerCase()] || "application/octet-stream");
+  const publicRoot = path.resolve(__dirname);
+  const requested = path.resolve(publicRoot, assetName);
+  const relative = path.relative(publicRoot, requested);
+  if (path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`)) {
+    return sendJson(res, 404, { error: "Not found." });
+  }
 
-    fs.createReadStream(requested).pipe(res);
+  fs.realpath(publicRoot, (rootError, realRoot) => {
+    if (rootError) return sendJson(res, 404, { error: "Not found." });
+    fs.realpath(requested, (assetError, realAsset) => {
+      if (assetError) return sendJson(res, 404, { error: "Not found." });
+      const relativeTarget = path.relative(realRoot, realAsset);
+      const expectedTarget = path.resolve(realRoot, assetName);
+      if (
+        path.isAbsolute(relativeTarget) || relativeTarget === ".." || relativeTarget.startsWith(`..${path.sep}`) ||
+        path.relative(expectedTarget, realAsset) !== ""
+      ) {
+        return sendJson(res, 404, { error: "Not found." });
+      }
+
+      fs.stat(realAsset, (error, stat) => {
+        if (error || !stat.isFile()) {
+          return sendJson(res, 404, { error: "Not found." });
+        }
+
+        securityHeaders(res);
+        res.setHeader("Cache-Control", assetName === "index.html" ? "no-cache" : "public, max-age=3600");
+        res.setHeader("Content-Type", MIME[path.extname(realAsset).toLowerCase()] || "application/octet-stream");
+        fs.createReadStream(realAsset).pipe(res);
+      });
+    });
   });
 }
 
-const server = http.createServer(async (req, res) => {
-  if (req.method === "GET" && req.url === "/api/health") {
-    return sendJson(res, 200, {
-      ok: true,
-      service: "nexus-api",
-      configured: Boolean(API_KEY)
-    });
-  }
+function createServer({ apiKey = "", appUrl = "http://localhost", fetchImpl = globalThis.fetch } = {}) {
+  return http.createServer(async (req, res) => {
+    if (req.method === "GET" && req.url === "/api/health") {
+      return sendJson(res, 200, {
+        ok: true,
+        service: "nexus-api",
+        configured: Boolean(apiKey)
+      });
+    }
 
-  if (req.method === "POST" && req.url === "/api/chat") {
-    return handleChat(req, res);
-  }
+    if (req.method === "POST" && req.url === "/api/chat") {
+      return handleChat(req, res, { apiKey, appUrl, fetchImpl });
+    }
 
-  if (req.method === "GET") {
-    return serveStatic(req, res);
-  }
+    if (req.method === "GET") {
+      return serveStatic(req, res);
+    }
 
-  sendJson(res, 405, { error: "Method not allowed." });
-});
+    sendJson(res, 405, { error: "Method not allowed." });
+  });
+}
 
-server.listen(PORT, HOST, () => {
-  console.log(`Nexus AI running at http://${HOST}:${PORT}`);
-  console.log(`API key configured: ${Boolean(API_KEY)}`);
-});
+module.exports = { createServer, CONTENT_SECURITY_POLICY };
 
-process.on("SIGINT", () => {
-  server.close(() => process.exit(0));
-});
+if (require.main === module) {
+  loadEnvFile();
+
+  const PORT = Number(process.env.PORT || 3000);
+  const HOST = process.env.HOST || "127.0.0.1";
+  const API_KEY = process.env.OPENROUTER_API_KEY || "";
+  const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+  const server = createServer({ apiKey: API_KEY, appUrl: APP_URL, fetchImpl: globalThis.fetch });
+
+  server.listen(PORT, HOST, () => {
+    console.log(`Nexus AI running at http://${HOST}:${PORT}`);
+    console.log(`API key configured: ${Boolean(API_KEY)}`);
+  });
+
+  process.on("SIGINT", () => {
+    server.close(() => process.exit(0));
+  });
+}
